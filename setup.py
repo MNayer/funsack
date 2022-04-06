@@ -1,5 +1,11 @@
 from setuptools import Extension, setup
-import os
+
+ext_modules = [
+    Extension("funsack",
+              sources=["funsack.pyx"],
+              libraries=["dwarf"]
+              )
+]
 
 setup(
     name="FunSack",
