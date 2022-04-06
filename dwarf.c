@@ -2,8 +2,18 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef __libdwarf_libdwarf_0
 #include <libdwarf/libdwarf-0/dwarf.h>
 #include <libdwarf/libdwarf-0/libdwarf.h>
+#endif /* __libdwarf_libdwarf_0 */
+#ifdef __libdwarf_0
+#include <libdwarf-0/dwarf.h>
+#include <libdwarf-0/libdwarf.h>
+#endif /* __libdwarf_0 */
+#ifdef __libdwarf
+#include <libdwarf/dwarf.h>
+#include <libdwarf/libdwarf.h>
+#endif /* __libdwarf */
 
 #define TRUE  1
 #define FALSE 0
