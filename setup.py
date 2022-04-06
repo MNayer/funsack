@@ -31,16 +31,3 @@ setup(
     author_email="f.weissberg@tu-bs.de",
     description="FunSack: A framework to acquire functions from an executable binary via DWARF (v2-v5) debugging information.",
 )
-
-#from setuptools import Extension, setup
-#from Cython.Build import cythonize
-#
-#ext_modules = [
-#    Extension("demo",
-#              sources=["demo.pyx"],
-#              libraries=["m"]  # Unix-like specific
-#              )
-#]
-#
-#setup(name="Demos",
-#      ext_modules=cythonize(ext_modules))
