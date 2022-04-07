@@ -4,6 +4,9 @@ binary via DWARF (v2-v5) debugging information.
 
 ## Requirements
 - Requires libdwarf 1:0.3.3-1
+- libdwarf.h and dwarf.h must be in \<includepath\>/libdwarf/libdwarf.h and
+  \<includepath\>/libdwarf/dwarf.h, respectively. If they are placed anywhere else,
+  a symbolic link at these locations should be created.
 
 ## Install
 ```
