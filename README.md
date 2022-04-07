@@ -10,11 +10,6 @@ binary via DWARF (v2-v5) debugging information.
 python -m pip install .
 ```
 
-## Build (no install)
-```
-python setup.py build_ext --inplace
-```
-
 ## Usage
 CLI:
 ```
