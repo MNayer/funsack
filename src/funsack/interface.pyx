@@ -1,3 +1,5 @@
+from elftools.elf.elffile import ELFFile
+
 cdef struct Cu_Info:
     const char *name
     const char *lang
@@ -29,3 +31,21 @@ cpdef collect_subprogram_dies(bytes fpath):
     global dies
     dies.clear()
     iterate_subprograms(fpath, <void (*)(Die_Info*)>&print_die_info)
+
+def iterate_functions(fpath):
+    # Initializes global >>dies<<
+    collect_subprogram_dies(fpath.encode("ascii"))
+
+    with open(fpath, "rb") as f:
+        elffile = ELFFile(f)
+
+        code = elffile.get_section_by_name(".text")
+        sh_addr = code["sh_addr"]
+        operations = code.data()
+
+        for die in dies:
+            low_pc = die["low_pc"]
+            high_pc = die["high_pc"]
+            ops = operations[low_pc - sh_addr: high_pc - sh_addr]
+            die["ops"] = ops.hex()
+            yield die

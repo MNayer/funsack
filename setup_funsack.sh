@@ -1,5 +1,8 @@
 #!/bin/sh
 
+funsack_repo=https://github.com/MNayer/funsack.git
+libdwarf_release=https://github.com/davea42/libdwarf-code/releases/download/v0.3.4/libdwarf-0.3.4.tar.xz
+
 required_packages="python3"
 required_build_packages="git gcc musl-dev make python3-dev py3-pip"
 installed_packages=$(apk info)
@@ -34,13 +37,14 @@ apk add $required_build_packages
 
 # Fetch libdwarf
 cd /tmp/
-wget https://github.com/davea42/libdwarf-code/releases/download/v0.3.4/libdwarf-0.3.4.tar.xz
-tar xf libdwarf-0.3.4.tar.xz
+wget $libdwarf_release
+tar xf libdwarf*.tar.xz
+rm libdwarf*.tar.xz
 
 # Build libdwarf
 mkdir /tmp/build
 cd /tmp/build
-/tmp/libdwarf-0.3.4/configure --enable-shared --disable-static
+/tmp/libdwarf*/configure --enable-shared --disable-static
 make
 make install
 
@@ -51,7 +55,7 @@ ln -s /usr/local/include/libdwarf-0/libdwarf.h /usr/local/include/libdwarf/libdw
 
 # Clone funsack
 cd /tmp/
-git clone https://github.com/MNayer/funsack.git
+git clone $funsack_repo
 cd /tmp/funsack
 python3 -m pip install .
 
