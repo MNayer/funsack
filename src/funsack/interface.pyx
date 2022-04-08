@@ -19,10 +19,10 @@ cdef print_die_info(Die_Info *info):
     die_info = {
         "low_pc": info.low_pc,
         "high_pc": info.high_pc,
-        "name": info.name,
+        "name": info.name.decode("ascii"),
         "cu": {
-            "name": info.cu.name,
-            "lang": info.cu.lang,
+            "name": info.cu.name.decode("ascii"),
+            "lang": info.cu.lang.decode("ascii"),
         },
     }
     dies.append(die_info)
