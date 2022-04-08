@@ -8,6 +8,13 @@
 #define TRUE  1
 #define FALSE 0
 
+/* Log levels */
+#define LL_ERROR 1
+#define LL_WARNING 2
+#define LL_INFO 3
+#define DEFAULT_LOGLEVEL LL_ERROR
+#define ENV_LOGLEVEL "DWARFLOGLEVEL"
+
 #define SIZEOF(ptr) (sizeof(*ptr))
 
 int cu_version_stamp = 0;
@@ -25,16 +32,45 @@ typedef struct die_info_s {
 
 typedef void (*subprogram_cb_t)(Die_Info info);
 
+int loglevel()
+{
+	char *loglevel_str = getenv(ENV_LOGLEVEL);
+	int loglevel = 0;
+	if (loglevel_str != NULL)
+		loglevel = atoi(loglevel_str);
+	if (1 <= loglevel && loglevel <= 3)
+		return loglevel;
+	return DEFAULT_LOGLEVEL;
+}
+
 int print_error(const char *format, ...)
 {
 	int res;
     va_list args;
     va_start(args, format);
 
-	res = vfprintf(stderr, format, args);
+	if (loglevel() >= LL_ERROR) {
+		fprintf(stderr, "ERROR: ");
+		res = vfprintf(stderr, format, args);
+	}
 
     va_end(args);
 	return res;
+}
+
+int print_warning(const char *format, ...)
+{
+    int res;
+    va_list args;
+    va_start(args, format);
+
+	if (loglevel() >= LL_WARNING) {
+		fprintf(stderr, "WARNING: ");
+		res = vfprintf(stderr, format, args);
+	}
+
+    va_end(args);
+    return res;
 }
 
 void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Signed filecount, subprogram_cb_t subprogram_cb)
@@ -55,20 +91,20 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	/* Low PC */
 	res = dwarf_lowpc(die, &low_pc, &error);
 	if (res == DW_DLV_ERROR) {
-		print_error("Error dwarf_lowpc returned DW_DLV_ERROR.\n");
+		print_error("dwarf_lowpc returned DW_DLV_ERROR.\n");
 		exit(1);
 	} else if (res == DW_DLV_NO_ENTRY) {
-		print_error("Error dwarf_lowpc returned DW_DLV_NO_ENTRY.\n");
+		print_warning("dwarf_lowpc returned DW_DLV_NO_ENTRY.\n");
 		return;
 	}
 
 	/* High PC */
 	res = dwarf_highpc_b(die, &high_pc, &form, &form_class, &error);
 	if (res == DW_DLV_ERROR) {
-		print_error("Error dwarf_lowpc returned DW_DLV_ERROR.\n");
+		print_error("dwarf_lowpc returned DW_DLV_ERROR.\n");
 		exit(1);
 	} else if (res == DW_DLV_NO_ENTRY) {
-		print_error("Error dwarf_lowpc returned DW_DLV_NO_ENTRY.\n");
+		print_error("dwarf_lowpc returned DW_DLV_NO_ENTRY.\n");
 		exit(1);
 	}
 	if (form_class == DW_FORM_CLASS_CONSTANT) {
@@ -78,20 +114,20 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	/* DIE name */
 	res = dwarf_diename(die, &die_name, &error);
 	if (res == DW_DLV_ERROR) {
-		print_error("Error dwarf_diename returned DW_DLV_ERROR.\n");
+		print_error("dwarf_diename returned DW_DLV_ERROR.\n");
 		exit(1);
 	} else if (res == DW_DLV_NO_ENTRY) {
-		print_error("Error dwarf_diename returned DW_DLV_NO_ENTRY.\n");
+		print_warning("dwarf_diename returned DW_DLV_NO_ENTRY.\n");
 		die_name = NULL;
 	}
 
 	/* CU DIE name */
 	res = dwarf_diename(cu_die, &cu_die_name, &error);
 	if (res == DW_DLV_ERROR) {
-		print_error("Error dwarf_diename returned DW_DLV_ERROR.\n");
+		print_error("dwarf_diename returned DW_DLV_ERROR.\n");
 		exit(1);
 	} else if (res == DW_DLV_NO_ENTRY) {
-		print_error("Error dwarf_diename returned DW_DLV_NO_ENTRY.\n");
+		print_warning("dwarf_diename returned DW_DLV_NO_ENTRY.\n");
 		cu_die_name = NULL;
 	}
 
@@ -100,14 +136,14 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	const char *lang_name = NULL;
 	res = dwarf_srclang(cu_die, &lang, &error);
 	if (res == DW_DLV_ERROR) {
-		print_error("Error dwarf_srclang returned DW_DLV_ERROR.\n");
+		print_error("dwarf_srclang returned DW_DLV_ERROR.\n");
 		exit(1);
 	} else if (res == DW_DLV_NO_ENTRY) {
-		print_error("Error dwarf_diename returned DW_DLV_NO_ENTRY.\n");
+		print_warning("dwarf_diename returned DW_DLV_NO_ENTRY.\n");
 	} else if (res == DW_DLV_OK) {
 		res = dwarf_get_LANG_name(lang, &lang_name);
 		if (res != DW_DLV_OK) {
-			print_error("Error dwarf_get_LANG_name did not return DW_DLV_OK.\n");
+			print_error("dwarf_get_LANG_name did not return DW_DLV_OK.\n");
 			exit(1);
 		}
 	}
@@ -169,7 +205,7 @@ examine_die_data(Dwarf_Debug dbg,
 
     res = dwarf_tag(die,&tag,errp);
     if (res != DW_DLV_OK) {
-        print_error("Error in dwarf_tag , level %d \n",level);
+        print_error("In dwarf_tag , level %d \n",level);
         exit(1);
     }
 
@@ -201,7 +237,7 @@ get_die_and_siblings(Dwarf_Debug dbg, Dwarf_Die cu_die, Dwarf_Die in_die,
         Dwarf_Die sib_die = 0;
         res = dwarf_child(cur_die,&child,errp);
         if (res == DW_DLV_ERROR) {
-            print_error("Error in dwarf_child, level %d \n", in_level);
+            print_error("In dwarf_child, level %d \n", in_level);
             exit(1);
         }
         if (res == DW_DLV_OK) {
@@ -215,7 +251,7 @@ get_die_and_siblings(Dwarf_Debug dbg, Dwarf_Die cu_die, Dwarf_Die in_die,
             &sib_die,errp);
         if (res == DW_DLV_ERROR) {
             char *em = dwarf_errmsg(*errp);
-            print_error("Error in dwarf_siblingof_b, level %d :%s \n",
+            print_error("In dwarf_siblingof_b, level %d :%s \n",
                 in_level,em);
             exit(1);
         }
@@ -268,7 +304,7 @@ find_subprograms(Dwarf_Debug dbg,
             &header_cu_type,errp);
         if (res == DW_DLV_ERROR) {
             char *em = dwarf_errmsg(*errp);
-            print_error("Error in dwarf_next_cu_header: %s\n",em);
+            print_error("In dwarf_next_cu_header: %s\n",em);
             exit(1);
         }
         if (res == DW_DLV_NO_ENTRY) {
@@ -282,7 +318,7 @@ find_subprograms(Dwarf_Debug dbg,
             &cu_die,errp);
         if (res == DW_DLV_ERROR) {
             char *em = dwarf_errmsg(*errp);
-            print_error("Error in dwarf_siblingof_b on CU die: %s\n",em);
+            print_error("In dwarf_siblingof_b on CU die: %s\n",em);
             exit(1);
         }
         if (res == DW_DLV_NO_ENTRY) {
@@ -299,22 +335,22 @@ find_subprograms(Dwarf_Debug dbg,
 		res = dwarf_srclines_b(cu_die, &ltversion, &tablecount,
 				&linectx, errp);
         if (res == DW_DLV_ERROR) {
-            print_error("Error dwarf_srclines_b returned DW_DLV_ERROR.\n");
+            print_error("dwarf_srclines_b returned DW_DLV_ERROR.\n");
             exit(1);
         }
         if (res == DW_DLV_NO_ENTRY) {
-            print_error("Error dwarf_srclines_b returned DW_DLV_NO_ENTRY.\n");
+            print_error("dwarf_srclines_b returned DW_DLV_NO_ENTRY.\n");
             exit(1);
         }
 
 		/* srcfiles list for CU */
 		res = dwarf_srcfiles(cu_die, &srcfiles, &filecount, errp);
         if (res == DW_DLV_ERROR) {
-            print_error("Error dwarf_srcfiles returned DW_DLV_ERROR.\n");
+            print_error("dwarf_srcfiles returned DW_DLV_ERROR.\n");
             exit(1);
         }
         if (res == DW_DLV_NO_ENTRY) {
-            print_error("Error dwarf_srcfiles returned DW_DLV_NO_ENTRY.\n");
+            print_error("dwarf_srcfiles returned DW_DLV_NO_ENTRY.\n");
             exit(1);
         }
 
