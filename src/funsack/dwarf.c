@@ -23,6 +23,7 @@ int cu_offset_size = 0;
 typedef struct die_info_s {
 	unsigned long long high_pc;
 	unsigned long long low_pc;
+	unsigned long long linenum;
 	const char *name;
 	struct {
 		const char *name;
@@ -83,6 +84,8 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	enum Dwarf_Form_Class form_class = 0;
 	char *die_name = NULL;
 	char *cu_die_name = NULL;
+	Dwarf_Unsigned linenum = 0;
+	Dwarf_Attribute lattr = NULL;
 	//Dwarf_Attribute decl_file_attr = 0;
 	int res = DW_DLV_ERROR;
 	Dwarf_Error error = 0;
@@ -129,6 +132,26 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	} else if (res == DW_DLV_NO_ENTRY) {
 		print_warning("dwarf_diename returned DW_DLV_NO_ENTRY.\n");
 		cu_die_name = NULL;
+	}
+	
+	/* DIE Line number */
+	res = dwarf_attr(die, DW_AT_decl_line, &lattr, &error);
+	if (res == DW_DLV_ERROR) {
+		print_error("dwarf_attr for DW_AT_decl_line returned DW_DLV_ERROR.\n");
+		exit(1);
+	} else if (res == DW_DLV_NO_ENTRY) {
+		print_warning("dwarf_attr for DW_AT_decl_line returned DW_DLV_NO_ENTRY.\n");
+		linenum = 0;
+	} else if (res == DW_DLV_OK) {
+        res = dwarf_formudata(lattr, &linenum, &error);
+        if (res != DW_DLV_OK) {
+            if (res == DW_DLV_ERROR) {
+				print_error("dwarf_formudata for linenum returned DW_DLV_ERROR.\n");
+				exit(1);
+            }
+			print_warning("dwarf_formudata for linenum returned DW_DLV_NO_ENTRy.\n");
+            linenum = 0;
+        }
 	}
 
 	/* CU srclang */
@@ -181,10 +204,12 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	info->name = die_name == NULL ? "" : die_name;
 	info->low_pc = low_pc;
 	info->high_pc = high_pc;
+	info->linenum = linenum;
 	subprogram_cb(info);
 	
 	/* Deallocation */
 	free(info);
+	dwarf_dealloc_attribute(lattr);
 	//dwarf_dealloc_attribute(decl_file_attr);
 }
 
