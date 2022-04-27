@@ -2,6 +2,7 @@ from elftools.elf.elffile import ELFFile
 
 cdef struct Cu_Info:
     const char *name
+    const char *compdir
     const char *lang
 
 cdef struct Die_Info:
@@ -22,6 +23,7 @@ cdef print_die_info(Die_Info *info):
         "name": info.name.decode("ascii"),
         "cu": {
             "name": info.cu.name.decode("ascii"),
+            "compdir": info.cu.compdir.decode("ascii"),
             "lang": info.cu.lang.decode("ascii"),
         },
     }

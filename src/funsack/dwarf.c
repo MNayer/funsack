@@ -26,6 +26,7 @@ typedef struct die_info_s {
 	const char *name;
 	struct {
 		const char *name;
+		const char *compdir;
 		const char *lang;
 	} cu;
 } *Die_Info;
@@ -83,7 +84,9 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	enum Dwarf_Form_Class form_class = 0;
 	char *die_name = NULL;
 	char *cu_die_name = NULL;
+	char *cdir = NULL;
 	//Dwarf_Attribute decl_file_attr = 0;
+	Dwarf_Attribute comp_dir_attr = 0;
 	int res = DW_DLV_ERROR;
 	Dwarf_Error error = 0;
 	Die_Info info = NULL;
@@ -129,6 +132,26 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	} else if (res == DW_DLV_NO_ENTRY) {
 		print_warning("dwarf_diename returned DW_DLV_NO_ENTRY.\n");
 		cu_die_name = NULL;
+	}
+
+	/* CU DIE compilation directory */
+	res = dwarf_attr(cu_die, DW_AT_comp_dir, &comp_dir_attr, &error);
+    if (res == DW_DLV_ERROR) {
+		print_error("dwarf_attr returned DW_DLV_ERROR.\n");
+		exit(1);
+	} else if (res == DW_DLV_NO_ENTRY) {
+		print_warning("dwarf_attr returned DW_DLV_NO_ENTRY.\n");
+		cdir = NULL;
+    } else if (res == DW_DLV_OK) {
+        res = dwarf_formstring(comp_dir_attr, &cdir, &error);
+		if (res == DW_DLV_ERROR) {
+			print_error("dwarf_formstring returned DW_DLV_ERROR.\n");
+			exit(1);
+		} else if (res == DW_DLV_NO_ENTRY) {
+			print_warning("dwarf_formstring returned DW_DLV_NO_ENTRY.\n");
+			cdir = NULL;
+		}
+        //dwarf_dealloc(cu_die->di_cu_context->cc_dbg, comp_dir_attr, DW_DLA_ATTR);
 	}
 
 	/* CU srclang */
@@ -177,6 +200,7 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 
 	info = (Die_Info) calloc(1, SIZEOF(info));
 	info->cu.name = cu_die_name == NULL ? "" : cu_die_name;
+	info->cu.compdir = cdir == NULL ? "" : cdir;
 	info->cu.lang = lang_name == NULL ? "" : lang_name;
 	info->name = die_name == NULL ? "" : die_name;
 	info->low_pc = low_pc;
