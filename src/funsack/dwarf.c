@@ -25,6 +25,7 @@ typedef struct die_info_s {
 	unsigned long long low_pc;
 	unsigned long long linenum;
 	const char *name;
+    const char *decl_file;
 	struct {
 		const char *name;
 		const char *compdir;
@@ -75,20 +76,21 @@ int print_warning(const char *format, ...)
     return res;
 }
 
-void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Signed filecount, subprogram_cb_t subprogram_cb)
+void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Unsigned filecount, subprogram_cb_t subprogram_cb)
 {
 	Dwarf_Addr low_pc = 0;
 	Dwarf_Addr high_pc = 0;
 	Dwarf_Half form = 0;
-	//Dwarf_Unsigned filenum = 0;
-	//Dwarf_Unsigned fileidx = 0;
+	Dwarf_Unsigned filenum = 0;
+	Dwarf_Unsigned fileidx = 0;
 	enum Dwarf_Form_Class form_class = 0;
 	char *die_name = NULL;
 	char *cu_die_name = NULL;
 	char *cdir = NULL;
+	char *decl_file = NULL;
 	Dwarf_Unsigned linenum = 0;
 	Dwarf_Attribute lattr = NULL;
-	//Dwarf_Attribute decl_file_attr = 0;
+	Dwarf_Attribute decl_file_attr = 0;
 	Dwarf_Attribute comp_dir_attr = 0;
 	int res = DW_DLV_ERROR;
 	Dwarf_Error error = 0;
@@ -195,37 +197,40 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	}
 
 	/* Declaration file */
-	//res = dwarf_attr(die, DW_AT_decl_file, &decl_file_attr, &error);
-	//if (res == DW_DLV_ERROR) {
-	//	print_error("Error dwarf_attr returned DW_DLV_ERROR.\n");
-	//	exit(1);
-	//} else if (res == DW_DLV_NO_ENTRY) {
-	//	print_error("Error dwarf_attr returned DW_DLV_NO_ENTRY.\n");
-	//	return;
-	//}
-	//res = dwarf_formudata(decl_file_attr, &filenum, &error);
-	//if (res == DW_DLV_ERROR) {
-	//	print_error("Error dwarf_formudata returned DW_DLV_ERROR.\n");
-	//	exit(1);
-	//} else if (res == DW_DLV_NO_ENTRY) {
-	//	print_error("Error dwarf_formudata returned DW_DLV_NO_ENTRY.\n");
-	//	exit(1);
-	//}
-	//if (filenum == 0) {
-	//	print_error("Error DW_AT_decl_file is 0 for subprogram %s.\n", die_name);
-	//	exit(1);
-	//}
-	//fileidx = filenum - 1;
-	//if (fileidx >= filecount) {
-	//	print_error("Error DW_AT_decl_file is greater than filecount for subprogram %s.\n", die_name);
-	//	exit(1);
-	//}
+	res = dwarf_attr(die, DW_AT_decl_file, &decl_file_attr, &error);
+	if (res == DW_DLV_ERROR) {
+		print_error("Error dwarf_attr returned DW_DLV_ERROR.\n");
+		exit(1);
+	} else if (res == DW_DLV_NO_ENTRY) {
+		print_error("Error dwarf_attr returned DW_DLV_NO_ENTRY.\n");
+		return;
+	}
+	res = dwarf_formudata(decl_file_attr, &filenum, &error);
+	if (res == DW_DLV_ERROR) {
+		print_error("Error dwarf_formudata returned DW_DLV_ERROR.\n");
+		exit(1);
+	} else if (res == DW_DLV_NO_ENTRY) {
+		print_error("Error dwarf_formudata returned DW_DLV_NO_ENTRY.\n");
+		exit(1);
+	}
+	if (filenum == 0) {
+		print_error("Error DW_AT_decl_file is 0 for subprogram %s.\n", die_name);
+		//exit(1);
+	} else {
+		fileidx = filenum - 1;
+		if (fileidx >= filecount) {
+			print_error("Error DW_AT_decl_file is greater than filecount for subprogram %s.\n", die_name);
+			exit(1);
+		}
+		decl_file = srcfiles[fileidx];
+	}
 
 	info = (Die_Info) calloc(1, SIZEOF(info));
 	info->cu.name = cu_die_name == NULL ? "" : cu_die_name;
 	info->cu.compdir = cdir == NULL ? "" : cdir;
 	info->cu.lang = lang_name == NULL ? "" : lang_name;
 	info->name = die_name == NULL ? "" : die_name;
+	info->decl_file = decl_file == NULL ? "" : decl_file;
 	info->low_pc = low_pc;
 	info->high_pc = high_pc;
 	info->linenum = linenum;
@@ -234,7 +239,7 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Sig
 	/* Deallocation */
 	free(info);
 	dwarf_dealloc_attribute(lattr);
-	//dwarf_dealloc_attribute(decl_file_attr);
+	dwarf_dealloc_attribute(decl_file_attr);
 }
 
 void
@@ -259,7 +264,7 @@ examine_die_data(Dwarf_Debug dbg,
     }
 
     if (tag == DW_TAG_subprogram) {
-		create_die_info(cu_die,die,srcfiles,filecount,subprogram_cb);
+		create_die_info(cu_die,die,srcfiles,(Dwarf_Unsigned) filecount,subprogram_cb);
     }
 }
 

@@ -22,7 +22,11 @@ funs -i </path/to/elffile>
 
 Within python:
 ```python
-from funsack import collect_subprogram_dies, dies
-collect_subprogram_dies("/tmp/test/test".encode("ascii"))
-print(dies)
+from funsack.interface import iterate_functions
+
+# Path to target ELF file
+fpath = "/path/to/elffile"
+
+for function in iterate_functions(fpath):
+	print(function)
 ```

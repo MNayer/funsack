@@ -10,6 +10,7 @@ cdef struct Die_Info:
     unsigned long long low_pc
     unsigned long long linenum
     const char *name
+    const char *decl_file
     Cu_Info cu
 
 cdef extern from "dwarf.c":
@@ -23,6 +24,7 @@ cdef print_die_info(Die_Info *info):
         "high_pc": info.high_pc,
         "name": info.name.decode("ascii"),
         "linenum": info.linenum,
+        "decl_file": info.decl_file.decode("ascii"),
         "cu": {
             "name": info.cu.name.decode("ascii"),
             "compdir": info.cu.compdir.decode("ascii"),
