@@ -83,7 +83,6 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Uns
 	Dwarf_Addr high_pc = 0;
 	Dwarf_Half form = 0;
 	Dwarf_Unsigned filenum = 0;
-	Dwarf_Unsigned fileidx = 0;
 	enum Dwarf_Form_Class form_class = 0;
 	char *die_name = NULL;
 	char *cu_die_name = NULL;
@@ -218,12 +217,11 @@ void create_die_info(Dwarf_Die cu_die, Dwarf_Die die, char **srcfiles, Dwarf_Uns
 		print_error("Error DW_AT_decl_file is 0 for subprogram %s.\n", die_name);
 		//exit(1);
 	} else {
-		fileidx = filenum - 1;
-		if (fileidx >= filecount) {
+		if (filenum >= filecount) {
 			print_error("Error DW_AT_decl_file is greater than filecount for subprogram %s.\n", die_name);
 			exit(1);
 		}
-		decl_file = srcfiles[fileidx];
+		decl_file = srcfiles[filenum];
 	}
 
 	info = (Die_Info) calloc(1, SIZEOF(info));
