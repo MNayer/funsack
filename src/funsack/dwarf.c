@@ -9,10 +9,11 @@
 #define FALSE 0
 
 /* Log levels */
+#define LL_NOLOG 0
 #define LL_ERROR 1
 #define LL_WARNING 2
 #define LL_INFO 3
-#define DEFAULT_LOGLEVEL LL_ERROR
+#define DEFAULT_LOGLEVEL LL_NOLOG
 #define ENV_LOGLEVEL "DWARFLOGLEVEL"
 
 #define SIZEOF(ptr) (sizeof(*ptr))
