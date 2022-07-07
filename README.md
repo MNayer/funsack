@@ -30,3 +30,18 @@ fpath = "/path/to/elffile"
 for function in iterate_functions(fpath):
 	print(function)
 ```
+
+Using docker:
+```bash
+# Build image
+docker build . -t funsack
+
+# Show help
+docker run --rm funsack funs --help
+
+# Parse dwarf, print to stdout
+docker run --rm -v <intput_dir>:/in funsack funs -i /in/<elf_file>
+
+# Parse dwarf, write output to file
+docker run --rm -v <input_dir>:/in -v <output_dir>:/out funs -i /in/<elf_file> -o /out/<jsonl_file>
+```
