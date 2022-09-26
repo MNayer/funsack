@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 funsack_repo=https://github.com/MNayer/funsack.git
 libdwarf_release=https://github.com/davea42/libdwarf-code/releases/download/v0.3.4/libdwarf-0.3.4.tar.xz
 
